@@ -1,13 +1,11 @@
+# Import statements:
 import numpy as np
 import csv
 
-# TODO: remove
-import os
-import time
-
 """
-- THE TASK: "code a large-scale matrix factorisation recommender system algorithm to
-  train and then predict ratings for a large (20M) set of items"
+- THE TASK: 
+  "Code a large-scale matrix factorisation recommender system algorithm to train and then predict ratings for a 
+  large (20M) set of items".
 
 - UNDERSTANDING THE TASK:
   1. Matrix factorization = a section of linear algebra that focuses on mathematical operations that work by factorizing 
@@ -17,7 +15,7 @@ import time
          2.1. User matrix = matrix with latent factors (preferences) of each user.
          2.2. Item matrix = matrix with latent factors of each item.
          2.3. Latent factors = characteristics (features) of users/items. By learning these factors of the training set,
-              they can be further used to  predict ratings on the testing set.
+              they can be further used to predict ratings on the testing set.
 
 - CHOICE OF THE ALGORITHM:
   As found in literature, the most popular matrix factorization recommender algorithms are: ALS and SVD [1, 2, 3]. 
@@ -34,7 +32,7 @@ import time
      Each row of the user matrix represents a user, and each row in the item matrix represents an item. 
      The number of columns in these matrices equals to the number of latent factors, where the optimal number will be 
      identified during hyperparameter tuning.
-     The shape of the user and item matrices is therefore as follows:
+     The shape of the user and item matrices is, therefore, as follows:
      Shape of U = (number of users, number of latent factors).
      Shape of I = (number of items, number of latent factors).
   2. Next comes the iterative step, where the algorithm employs an alternating process in which:
@@ -89,16 +87,16 @@ import time
       + regularization term.
       
   The tuning process uses grid search, where the tested values are:
-      + number of latent factors: [TODO, ...]
-      + number of iterations: [TODO, ...]
-      + regularization term: [TODO, ...]
+      + number of latent factors: [2, 5, 7, 10, 15]
+      + number of iterations: [5, 7, 10, 15, 20, 30]
+      + regularization term: [0.01, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3]
   For the purpose of hyperparameter tuning, training set was randomly split into 90% for training and 10% for testing.
   
   Below are the hyperparameters that resulted in the best MAE score and are, therefore, used in the final version of
   the code:
-      + number of latent factors: TODO
-      + number of iterations: TODO
-      + regularization term: TODO
+      + number of latent factors: 10
+      + number of iterations: 10
+      + regularization term: 0.25
 
 - REFERENCES:
 [1] A. Priyati, A. D. Laksito, and H. Sismoro, "The Comparison Study of Matrix Factorization on Collaborative Filtering 
@@ -186,7 +184,7 @@ def initialize_user_matrix(num_unique_users, num_latent_factors):
     :param num_latent_factors: number of latent factors (chosen after hyperparameter tuning)
     :return: the user matrix
     """
-    np.random.seed(1)
+    np.random.seed(42)
     users_matrix = np.random.normal(0, 0.1, (num_unique_users, num_latent_factors))
     return users_matrix
 
@@ -199,7 +197,7 @@ def initialize_item_matrix(num_unique_items, num_latent_factors):
     :param num_latent_factors: number of latent factors (chosen after hyperparameter tuning)
     :return: the item matrix
     """
-    np.random.seed(1)
+    np.random.seed(42)
     items_matrix = np.random.normal(0, 0.1, (num_unique_items, num_latent_factors))
     return items_matrix
 
@@ -243,8 +241,6 @@ def run_ALS(num_iterations, users_items_matrix, users_matrix, items_matrix, regu
             items_matrix[item] = solve_least_squares(regularization_term, user_factors, ratings_for_item_by_user,
                                                      num_latent_factors)
 
-        # TODO: remove
-        print(i)
     return users_matrix, items_matrix
 
 
@@ -312,7 +308,8 @@ def get_average_ratings(users_items_matrix, for_users):
     return mean_ratings
 
 
-def predict_ratings(testing_set, users_matrix, items_matrix, users_and_indices, items_and_indices, users_vs_items_matrix):
+def predict_ratings(testing_set, users_matrix, items_matrix, users_and_indices, items_and_indices,
+                    users_vs_items_matrix):
     """
     Function that predicts ratings for the testing set and writes them to results.csv file
     :param testing_set: the testing set for which to predict ratings
@@ -328,29 +325,18 @@ def predict_ratings(testing_set, users_matrix, items_matrix, users_and_indices, 
     item_average_ratings = get_average_ratings(users_vs_items_matrix, False)
     user_average_ratings = get_average_ratings(users_vs_items_matrix, True)
 
-    # TODO: remove
-    predictions = []
-    counter = 0
-
     # Open the file for writing:
     with open('results.csv', 'w') as file:
         # Iterate over each item of the testing set:
-        for user, item, _, timestamp in testing_set:
+        for user, item, timestamp in testing_set:
             # If a rating can be predicted:
             if user in users_and_indices and item in items_and_indices:
                 user_index = users_and_indices[user]
                 item_index = items_and_indices[item]
                 # Predict the rating by dot-multiplying the optimized user and item matrices:
                 rating = np.dot(users_matrix[user_index], items_matrix[item_index])
-
-                # TODO: remove
-                predictions.append([user, item, rating])
             # If a rating cannot be predicted (i.e. cold start problem / user or item have not been in training set:
             else:
-                # TODO: remove
-                predictions.append([user, item, np.nan])
-                counter += 1
-
                 # Predict the rating to be the item's average rating (if the item has been rated by some users) or the
                 # user's average rating (if the item hasn't been rated yet)
                 rating = predict_average_when_cannot_be_predicted(item_index, user_index, item_average_ratings,
@@ -359,12 +345,34 @@ def predict_ratings(testing_set, users_matrix, items_matrix, users_and_indices, 
             # Write the rating to results.csv file:
             file.write(f"{user},{item},{round(rating)},{timestamp}\n")
 
-    # TODO: remove
-    print("NaN:", counter)
-    return np.array(predictions)
+
+if __name__ == '__main__':
+    # Read the train set and test set from given files into numpy arrays:
+    train_set = read_dataset_from_file("train_20M_withratings.csv")
+    test_set = read_dataset_from_file("test_20M_withoutratings.csv")
+
+    # Get the lists of unique users and items given in files:
+    unique_users, unique_items = get_unique_users_items(train_set, test_set)
+
+    # Store the given ratings in matrix form:
+    ratings_matrix, users_vs_indices, items_vs_indices = create_ratings_matrix(
+        train_set, unique_users, unique_items)
+
+    # Initialize the user matrix and the item matrix with random values:
+    user_matrix = initialize_user_matrix(len(unique_users), 10)
+    item_matrix = initialize_item_matrix(len(unique_items), 10)
+
+    # Run the iterative alternating ALS process with the hyperparameters identified by hyperparameter tuning:
+    user_matrix_after_ALS, item_matrix_after_ALS = run_ALS(10, ratings_matrix, user_matrix, item_matrix,
+                                                           0.25, 10)
+
+    # Predict the ratings for the testing set and write them to results.csv file:
+    predict_ratings(test_set, user_matrix_after_ALS, item_matrix_after_ALS, users_vs_indices,
+                    items_vs_indices, ratings_matrix)
 
 
-# TODO: move this to after __main__
+
+
 """
 The following 4 functions are not used in the final code.
 However, they were used for the hyperparameter tuning process. 
@@ -437,9 +445,9 @@ def grid_search_hyperparameter_tuning(users_vs_items_matrix, users_and_indices, 
     :param testing_set: the testing set
     :return: the best-performing set of hyperparameters (that yields the lowest MAE score)
     """
-    num_iterations_grid = [7, 10] # 2, 5, 10, 15
-    num_latent_factors_grid = [7, 10] # 5, 7, 10, 20, 30
-    regularization_term_grid = [0.1, 0.2] # 0.01, 0.05, 0.1, 0.15, 0.2
+    num_iterations_grid = [2, 5, 7, 10, 15]
+    num_latent_factors_grid = [5, 7, 10, 15, 20, 30]
+    regularization_term_grid = [0.01, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3]
 
     best_mae = float('inf')
     best_params = None
@@ -460,80 +468,3 @@ def grid_search_hyperparameter_tuning(users_vs_items_matrix, users_and_indices, 
 
     # Return the best set of hyperparameters and the acquired MAE score:
     return best_params, best_mae
-
-
-
-
-if __name__ == '__main__':
-    # TODO: remove
-    start_time = time.time()
-
-    # Read the train set and test set from given files into numpy arrays:
-    train_set = read_dataset_from_file("train_20M_withratings.csv")
-    # test_set = read_dataset_from_file("test_20M_withoutratings.csv")
-
-    # TODO: remove
-    # train_set = read_dataset_from_file("train_100k_withratings.csv")
-    # test_set = read_dataset_from_file("test_100k_withoutratings.csv")
-
-    # TODO: remove
-    train_set, test_set = train_validation_split(train_set, 0.1, 42)
-
-    # Get the lists of unique users and items given in files:
-    unique_users, unique_items = get_unique_users_items(train_set, test_set)
-    print("Unique:", len(unique_users), len(unique_items))
-
-    # Store the given ratings in matrix form:
-    ratings_matrix, users_vs_indices, items_vs_indices = create_ratings_matrix(
-        train_set, unique_users, unique_items)
-    print("Given ratings:", ratings_matrix.shape, len(users_vs_indices), len(items_vs_indices))
-
-    # TODO: uncomment
-    # Initialize the user matrix and the item matrix with random values:
-    # user_matrix = initialize_user_matrix(len(unique_users), 20)
-    # item_matrix = initialize_item_matrix(len(unique_items), 20)
-
-    # TODO: remove
-    # user_matrix_old = np.copy(user_matrix)
-    # item_matrix_old = np.copy(item_matrix)
-
-    # # Store the given timestamps in matrix form:
-    # timestamps_matrix = create_timestamps_matrix(train_set, test_set, users_vs_indices, items_vs_indices)
-
-    # TODO: uncomment
-    # Run the iterative alternating ALS process with the hyperparameters identified by hyperparameter tuning:
-    # user_matrix_after_ALS, item_matrix_after_ALS = run_ALS(2, ratings_matrix, user_matrix, item_matrix,
-    #                                                        0.01, 20)
-
-    # TODO: remove
-    # identical = np.array_equal(user_matrix_old, user_matrix_after_ALS)
-    # if identical:
-    #     print("User arrays are completely identical.")
-    # else:
-    #     print("User arrays are not completely identical.")
-    # identical2 = np.array_equal(item_matrix_old, item_matrix_after_ALS)
-    # if identical2:
-    #     print("Item arrays are completely identical.")
-    # else:
-    #     print("Item arrays are not completely identical.")
-
-    # Predict the ratings for the testing set and write them to results.csv file:
-    # TODO: method should not return anything eventually
-    # predicted_ratings = predict_ratings(test_set, user_matrix_after_ALS, item_matrix_after_ALS, users_vs_indices,
-    #                                     items_vs_indices, ratings_matrix)
-
-    # TODO: remove
-    # actual_ratings = test_set[:, :-1]
-    # print(predicted_ratings)
-    # print(actual_ratings)
-    # mae_score = calculate_mae(np.array(predicted_ratings), actual_ratings)
-    # print(f"MAE Score: {mae_score}")
-
-    # TODO: remove
-    grid_search_hyperparameter_tuning(ratings_matrix, users_vs_indices, items_vs_indices, test_set)
-
-    # TODO: remove
-    end_time = time.time()
-    total_time = end_time - start_time
-    print("Elapsed time:", total_time, "seconds")
-    os.system("say 'Your Python script has finished running'")
