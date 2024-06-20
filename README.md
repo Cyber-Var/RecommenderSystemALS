@@ -4,4 +4,4 @@
 
 ### The training set consists of 20 million ratings. The testing set is made up of 1.4 million user-item pairs. 
 
-## The MAE acquired on the testing set is 0.6537.
+### The MAE acquired on the testing set is 0.6537.
